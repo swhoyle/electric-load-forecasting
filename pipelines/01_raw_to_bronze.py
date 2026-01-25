@@ -25,70 +25,49 @@ BRONZE_DATA_PATH = "data/bronze/power_load.parquet"
 # Load MATLAB file
 # -------------------------------------------------
 print("Loading raw data...")
-mat = loadmat(RAW_DATA_PATH)
-P_data = mat["P_data"]          # shape: (seconds, days)
-day_data = mat["day_data"]      # shape: (1, days)
+raw = loadmat(RAW_DATA_PATH)
+p_data = raw["P_data"]          # shape: (seconds, days)
+day_data = raw["day_data"]      # shape: (1, days)
 
 
 # -------------------------------------------------
-# Clean day_data into Python datetime objects
+# Restructure Raw Data
 # -------------------------------------------------
-print("Cleaning day data...")
-dates = [d[0] for d in day_data.squeeze()]
-dates = pd.to_datetime(dates)
 
+# One row per second.
+# Shape will be (days*86400, 2) = (31*86400, 2) = (2678400, 2)
+    
+#|---------------------|-------|
+#| timestamp           | load  |
+#|---------------------|-------|
+#| 2025-11-31 00:00:00 | 1000. |
+#| 2025-11-31 00:00:01 | 1820. |
+# ...
+#| 2025-12-31 11:59:59 | 927.  |
+#|---------------------|-------|
 
-# -------------------------------------------------
-# Create seconds-of-day vector (0 → 86399)
-# -------------------------------------------------
-print("Creating seconds-of-day vector...")
-seconds = np.arange(P_data.shape[0]) 
-
-
-# -------------------------------------------------
-# Build long (tidy) dataframe
-# -------------------------------------------------
-print("Building dataframe...")
 df = (
-    pd.DataFrame(P_data, columns=dates)
-      .assign(second_of_day=seconds)
-      .melt(
-          id_vars="second_of_day",
-          var_name="date",
-          value_name="load"
-      )
-)
-
-
-# -------------------------------------------------
-# Create timestamp column
-# -------------------------------------------------
-print("Creating timestamp column...")
-df["date"] = pd.to_datetime(df["date"], errors="raise")
-df["timestamp"] = df["date"] + pd.to_timedelta(df["second_of_day"], unit="s")
-
-# -------------------------------------------------
-# Final two-column dataframe sorted by timestamp
-# -------------------------------------------------
-print("Finalizing dataframe...")
-df = (
-    df[["timestamp", "load"]]
-    .sort_values("timestamp")
-    .reset_index(drop=True)
+    pd.DataFrame(p_data, columns=pd.to_datetime([d[0] for d in day_data.squeeze()]))
+      .assign(second_of_day=lambda x: np.arange(len(x)))
+      .melt("second_of_day", var_name="date", value_name="load")
+      .assign(date=lambda x: pd.to_datetime(x["date"]))
+      .assign(timestamp=lambda x: x["date"] + pd.to_timedelta(x["second_of_day"], unit="s"))
+      .sort_values("timestamp")[["timestamp", "load"]]
+      .reset_index(drop=True)
 )
 
 # -------------------------------------------------
-# Validate
+# Validate / Quality Check
 # -------------------------------------------------
 print("Validating dataframe...")
-expected_rows = P_data.shape[0] * P_data.shape[1]
+expected_rows = p_data.shape[0] * p_data.shape[1]
 assert df.shape[0] == expected_rows, f"Expected {expected_rows} rows, got {df.shape[0]}"
 assert df["timestamp"].is_monotonic_increasing, "Timestamps are not sorted!"
 assert not df["load"].isnull().any(), "Load column contains null values!"
 midnight_loads = df[df["timestamp"].dt.time == pd.Timestamp("00:00:00").time()]["load"].to_numpy()
 noon_loads = df[df["timestamp"].dt.time == pd.Timestamp("12:00:00").time()]["load"].to_numpy()
-assert np.array_equal(noon_loads, P_data[43200, :]), "Noon loads do not match P_data[43200, :]."
-assert np.array_equal(P_data[0, :], midnight_loads), "Midnight loads do not match P_data[0, :]."
+assert np.array_equal(noon_loads, p_data[43200, :]), "Noon loads do not match p_data[43200, :]."
+assert np.array_equal(p_data[0, :], midnight_loads), "Midnight loads do not match p_data[0, :]."
 print("✅ Data validation passed!")
 
 # -------------------------------------------------
