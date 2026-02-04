@@ -118,4 +118,3 @@ def raw_to_bronze():
 
 if __name__ == "__main__":
     raw_to_bronze()
-
