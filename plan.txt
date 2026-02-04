@@ -32,7 +32,7 @@ Output file: bronze/power_load.parquet
     |---------------------|-------|
 
 ================================================================================
-Step 3: Collapse Data into Time Intervals (bronze->silver)
+Step 3: Downsample Data (bronze->silver)
 ================================================================================
 
 We don't want to predict second-to-second because that is impractical and won't be a good model.
