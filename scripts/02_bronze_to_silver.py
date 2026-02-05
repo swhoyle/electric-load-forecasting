@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
 
-BRONZE_PATH = "data/bronze/power_load_1s.parquet"   # expects: timestamp, load, day_class
+BRONZE_PATH = "data/bronze/power_load_1s.parquet"  # expects: timestamp, load, day_class
 SILVER_PATH = "data/silver/power_load_1m.parquet"
 
 # Configure your history windows here (in minutes)
-LAG_MINUTES = [1, 5, 15, 60, 1440]                 # 1m, 5m, 15m, 1h, 1d
-ROLLING_MINUTES = [5, 15, 60, 240, 1440]           # 5m, 15m, 1h, 4h, 1d
-SLOPE_MINUTES = [5, 15, 60]                        # slope over these lookback windows (minutes)
+LAG_MINUTES = [1, 5, 15, 60, 1440]  # 1m, 5m, 15m, 1h, 1d
+ROLLING_MINUTES = [5, 15, 60, 240, 1440]  # 5m, 15m, 1h, 4h, 1d
+SLOPE_MINUTES = [5, 15, 60]  # slope over these lookback windows (minutes)
 
 DAY_CLASS_TO_WORKDAY = {"none": 0, "half": 1, "full": 2}
 
@@ -51,6 +51,9 @@ def bronze_to_silver():
     print("Loading bronze data...")
     df = pd.read_parquet(BRONZE_PATH)
 
+    # Filter out NaN load
+    df = df[df["load"].notna()]
+
     # Basic validation
     required_cols = {"timestamp", "load", "day_class"}
     missing = required_cols - set(df.columns)
@@ -63,12 +66,9 @@ def bronze_to_silver():
     # 1) Resample to 1-minute and keep workday classification
     # day_class should be constant within a day, so "first" is fine per minute.
     print("Resampling to 1-minute...")
-    silver = (
-        df.resample("1min")
-          .agg(
-              avg_load=("load", "mean"),
-              day_class=("day_class", "first"),
-          )
+    silver = df.resample("1min").agg(
+        avg_load=("load", "mean"),
+        day_class=("day_class", "first"),
     )
 
     # (Optional) drop minutes where avg_load is NaN (happens if whole minute missing)
@@ -86,7 +86,7 @@ def bronze_to_silver():
 
     # day_of_week: user wants 0=Sunday ... 6=Saturday
     # pandas: Monday=0 ... Sunday=6 -> convert:
-    silver["day_of_week"] = ((ts.dayofweek + 1) % 7).astype(int)
+    silver["weekday"] = ((ts.dayofweek + 1) % 7).astype(int)
 
     silver["hour"] = ts.hour.astype(int)
     silver["season"] = ts.month.map(month_to_season).astype(int)
