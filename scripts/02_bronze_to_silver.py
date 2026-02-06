@@ -1,51 +1,16 @@
 import numpy as np
 import pandas as pd
 
-BRONZE_PATH = "data/bronze/power_load_1s.parquet"   # expects: timestamp, load, day_class
+BRONZE_PATH = "data/bronze/power_load_1s.parquet"
 SILVER_PATH = "data/silver/power_load_1m.parquet"
 
-# Configure your history windows here (in minutes)
-LAG_MINUTES = [1, 5, 15, 60, 1440]                 # 1m, 5m, 15m, 1h, 1d
-ROLLING_MINUTES = [5, 15, 60, 240, 1440]           # 5m, 15m, 1h, 4h, 1d
-SLOPE_MINUTES = [5, 15, 60]                        # slope over these lookback windows (minutes)
-
-DAY_CLASS_TO_WORKDAY = {"none": 0, "half": 1, "full": 2}
-
-
-def month_to_season(month: int) -> int:
-    """1=Winter(Dec-Feb), 2=Spring(Mar-May), 3=Summer(Jun-Aug), 4=Fall(Sep-Nov)"""
-    if month in (12, 1, 2):
-        return 1
-    if month in (3, 4, 5):
-        return 2
-    if month in (6, 7, 8):
-        return 3
-    return 4  # 9,10,11
-
-
-def hour_to_time_of_day(hour: int) -> int:
-    """0=morning(6-11), 1=afternoon(12-16), 2=evening(17-21), 3=night(22-5)"""
-    if 6 <= hour <= 11:
-        return 0
-    if 12 <= hour <= 16:
-        return 1
-    if 17 <= hour <= 21:
-        return 2
-    return 3
-
-
-def rolling_slope(y: np.ndarray) -> float:
-    """
-    Slope (per minute) by fitting a straight line to the window.
-    y is an array of length window where x = [0, 1, ..., window-1] minutes.
-    """
-    if np.any(np.isnan(y)):
-        return np.nan
-    x = np.arange(len(y), dtype=float)
-    # slope of best-fit line (degree 1)
-    m, _b = np.polyfit(x, y, 1)
-    return float(m)
-
+def downsample(df: pd.DataFrame, freq: str) -> pd.DataFrame:
+    return (
+        df.resample(freq)
+          .agg(
+              avg_load=("load", "mean")
+          )
+    )
 
 def bronze_to_silver():
     print("Loading bronze data...")
@@ -88,9 +53,6 @@ def bronze_to_silver():
     # pandas: Monday=0 ... Sunday=6 -> convert:
     silver["day_of_week"] = ((ts.dayofweek + 1) % 7).astype(int)
 
-    silver["hour"] = ts.hour.astype(int)
-    silver["season"] = ts.month.map(month_to_season).astype(int)
-    silver["time_of_day"] = ts.hour.map(hour_to_time_of_day).astype(int)
 
     # 4) Load history features
     # Lags
