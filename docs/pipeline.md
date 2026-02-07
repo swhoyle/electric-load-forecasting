@@ -17,7 +17,7 @@ We split our data storage into several layers:
 | - | - | - |
 | **📄 Raw** | [`raw/P_data.mat`](#⚪-dataset-rawp_datamat)| Raw data file provided by the customer |
 | **🥉 Bronze** | [`bronze/powerload_1s.parquet`](#🟠-dataset-bronzepowerload_1sparquet) | 1-second resolution power load|
-| **🥉 Bronze** | [`bronze/dim_date.parquet`](#🟠-dataset-bronzedim_date.parquet) | Date dimension|
+| **🥉 Bronze** | [`bronze/days.parquet`](#🟠-dataset-bronzedays.parquet) | Power load days |
 | **🥈 Silver** | [`silver/powerload_1s.parquet`](#⚪-dataset-bronzepowerload_1sparquet) | 1-second resolution power load|
 | **🥈 Silver**| [`silver/powerload_10s.parquet`](#⚪-dataset-silverpowerload_1sparquet) | 10-second resolution power load|
 | **🥈 Silver**| [`silver/powerload_30s.parquet`](#⚪-dataset-silverpowerload_30sparquet) | 30-second resolution power load|
@@ -26,7 +26,8 @@ We split our data storage into several layers:
 | **🥈 Silver**| [`silver/powerload_5m.parquet`](#⚪-dataset-silverpowerload_5mparquet) | 5-minute resolution power load|
 | **🥈 Silver**| [`silver/powerload_10m.parquet`](#⚪-dataset-silverpowerload_10mparquet) | 10-minute resolution power load|
 | **🥈 Silver**| [`silver/powerload_15m.parquet`](#⚪-dataset-silverpowerload_15mparquet) | 15-minute resolution power load|
-| **🥈 Silver**| [`silver/dim_date.parquet`](#⚪-dataset-silverdim_date.parquet) | Date dimension|
+| **🥈 Silver**| [`silver/dim_date.parquet`](#⚪-dataset-silverdim_dateparquet) | Date dimension|
+| **🥈 Silver**| [`silver/dim_time.parquet`](#⚪-dataset-silverdim_timeparquet) | Time dimension|
 
 ## 📄 Raw Layer
 
@@ -92,9 +93,9 @@ The bronze layer contains minimal cleaning and restructuring of raw data.
 | 2025-12-28 11:59:59   | 0  |
 
 
-#### 🟠 Dataset: `bronze/dim_date.parquet`
+#### 🟠 Dataset: `bronze/days.parquet`
 
-Date dimension table with workday type field.
+Powerload days and any business data on the days. 
 
 | date       | workday |
 | ---------  | ---- |
