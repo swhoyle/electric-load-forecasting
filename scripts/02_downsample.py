@@ -20,6 +20,7 @@ def downsample_and_save(df: pd.DataFrame, freq: str, path: str):
           .agg(
               avg_load=("load", "mean")
           )
+          .reset_index()
     )
     downsampled.to_parquet(path)
     print(f"\nSaved to {path}")

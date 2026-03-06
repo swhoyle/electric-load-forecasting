@@ -53,10 +53,10 @@ def process_raw():
     date_df = pd.DataFrame({
         "date": pd.to_datetime([d[0] for d in day_data.squeeze()]),
         "day_class": [d[0] for d in day_class.squeeze()]
-    }).rename(columns={"day_class": "workday"})
+    })
 
     # Validation
-    assert date_df["workday"].isin(["full", "half", "none"]).all()
+    assert date_df["day_class"].isin(["full", "half", "none"]).all()
     assert len(date_df) == df["timestamp"].dt.date.nunique()
     assert date_df["date"].dt.date.min() == df["timestamp"].dt.date.min()
     assert date_df["date"].dt.date.max() == df["timestamp"].dt.date.max()

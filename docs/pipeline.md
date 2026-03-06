@@ -17,7 +17,7 @@ We split our data storage into several layers:
 | - | - | - |
 | **📄 Raw** | [`raw/P_data.mat`](#⚪-dataset-rawp_datamat)| Raw data file provided by the customer |
 | **🥉 Bronze** | [`bronze/powerload_1s.parquet`](#🟠-dataset-bronzepowerload_1sparquet) | 1-second resolution power load|
-| **🥉 Bronze** | [`bronze/days.parquet`](#🟠-dataset-bronzedays.parquet) | Power load days |
+| **🥉 Bronze** | [`bronze/days.parquet`](#🟠-dataset-bronzedaysparquet) | Power load days |
 | **🥈 Silver** | [`silver/powerload_1s.parquet`](#⚪-dataset-bronzepowerload_1sparquet) | 1-second resolution power load|
 | **🥈 Silver**| [`silver/powerload_10s.parquet`](#⚪-dataset-silverpowerload_1sparquet) | 10-second resolution power load|
 | **🥈 Silver**| [`silver/powerload_30s.parquet`](#⚪-dataset-silverpowerload_30sparquet) | 30-second resolution power load|
@@ -28,7 +28,7 @@ We split our data storage into several layers:
 | **🥈 Silver**| [`silver/powerload_15m.parquet`](#⚪-dataset-silverpowerload_15mparquet) | 15-minute resolution power load|
 | **🥈 Silver**| [`silver/dim_date.parquet`](#⚪-dataset-silverdim_dateparquet) | Date dimension|
 | **🥈 Silver**| [`silver/dim_time.parquet`](#⚪-dataset-silverdim_timeparquet) | Time dimension|
-
+| **🥇 Gold**| [`gold/powerload_1m.parquet`](#⚪-dataset-goldpowerload_1mparquet) | 1-minute resolution load (w/ other features)
 ## 📄 Raw Layer
 
 The raw layer contains raw, untouched data provided by the customer.
@@ -97,7 +97,7 @@ The bronze layer contains minimal cleaning and restructuring of raw data.
 
 Powerload days and any business data on the days. 
 
-| date       | workday |
+| date       | day_class |
 | ---------  | ---- |
 | 2025-11-28 | full |
 | 2025-11-29 | half |
@@ -231,7 +231,7 @@ Date dimension table with one row per calendar date and derived date attributes.
 | Column       | Type    | Description |
 |-------------|---------|-------------|
 | `date`        | date    | Calendar date |
-| `workday`     | string  | Workday type: `full`, `half`, `none` |
+| `workday`     | string  | Workday type: 2=`full`, 1=`half`, 0=`none` |
 | `year`        | int     | Calendar year |
 | `quarter`     | int     | Quarter of year (1–4) |
 | `season`      | int     | Season code (1=Winter, 2=Spring, 3=Summer, 4=Fall) |
@@ -244,9 +244,9 @@ Date dimension table with one row per calendar date and derived date attributes.
 
 | date       | workday | year | quarter | season | month | day | weekday | is_weekend |
 |-----------|---------|------|---------|--------|-------|-----|---------|------------|
-| 2025-11-28 | full | 2025 | 4 | 4 | 11 | 28 | 4 | false |
-| 2025-11-29 | half | 2025 | 4 | 4 | 11 | 29 | 5 | true |
-| 2025-12-28 | none | 2025 | 4 | 1 | 12 | 28 | 6 | true |
+| 2025-11-28 | 1 | 2025 | 4 | 4 | 11 | 28 | 4 | false |
+| 2025-11-29 | 2 | 2025 | 4 | 4 | 11 | 29 | 5 | true |
+| 2025-12-28 | 0 | 2025 | 4 | 1 | 12 | 28 | 6 | true |
 
 
 #### ⚪ Dataset: `silver/dim_time.parquet`

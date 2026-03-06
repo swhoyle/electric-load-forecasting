@@ -29,6 +29,7 @@ def create_time_dim() -> list[dict]:
             "minute": minute,
             "second": second,
             "time_of_day": hour_to_time_of_day(hour),
+            "second_of_day": totalsecond
         })
 
     df = pd.DataFrame(time_dim)

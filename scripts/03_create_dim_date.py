@@ -5,6 +5,8 @@ BRONZE_DATE_FILEPATH = "data/bronze/days.parquet"
 YEAR_RANGE = (2025, 2026)
 OUTPUT_FILEPATH = "data/silver/dim_date.parquet"
 
+WORKDAY_MAPPING = {"full": 2, "half": 1, "none": 0}
+
 def month_to_season(month: int) -> int:
     """Convert month to season code: 1=Winter, 2=Spring, 3=Summer, 4=Fall"""
     if month in (12, 1, 2):
@@ -32,6 +34,7 @@ def create_dim_date() -> list[dict]:
     df["weekday"] = df["date"].dt.weekday
     df["season"] = df["month"].apply(month_to_season)
     df["is_weekend"] = df["weekday"].isin([5, 6])
+    df["workday"] = df["day_class"].map(WORKDAY_MAPPING)
 
     print("Saving date dimension to:", OUTPUT_FILEPATH)
     df.to_parquet(OUTPUT_FILEPATH, index=False)
